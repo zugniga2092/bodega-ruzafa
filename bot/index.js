@@ -201,28 +201,18 @@ bot.on('message', async (ctx) => {
   await ctx.reply('Solo puedo procesar mensajes de texto. ¿En qué puedo ayudarte?');
 });
 
-// ====== ARRANQUE: WEBHOOK (producción) o POLLING (local) ======
+// ====== ARRANQUE ======
 async function start() {
-  if (WEBHOOK_URL) {
-    // Modo webhook — recomendado en Render.com
-    const webhookPath = `/webhook/${TELEGRAM_TOKEN}`;
-    app.use(bot.webhookCallback(webhookPath));
+  // Express siempre activo (necesario para que Render detecte el servicio como "up")
+  app.get('/', (_, res) => res.send('OK'));
+  app.listen(PORT, () => {
+    console.log(`Servidor escuchando en puerto ${PORT}`);
+  });
 
-    await bot.telegram.setWebhook(`${WEBHOOK_URL}${webhookPath}`);
-    console.log(`Webhook registrado en ${WEBHOOK_URL}${webhookPath}`);
-
-    // Health check para Render
-    app.get('/', (_, res) => res.send('Sommelier BR operativo.'));
-
-    app.listen(PORT, () => {
-      console.log(`Servidor escuchando en puerto ${PORT}`);
-    });
-  } else {
-    // Modo polling — para desarrollo local
-    console.log('Iniciando en modo polling (local)...');
-    await bot.launch();
-    console.log('Bot iniciado. Esperando mensajes...');
-  }
+  // Bot en modo polling
+  console.log('Iniciando bot en modo polling...');
+  await bot.launch();
+  console.log('Bot iniciado. Esperando mensajes...');
 }
 
 start().catch(err => {
