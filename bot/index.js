@@ -203,15 +203,18 @@ bot.on('message', async (ctx) => {
 
 // ====== ARRANQUE ======
 async function start() {
-  // Express siempre activo (necesario para que Render detecte el servicio como "up")
+  // 1. Express se vincula al puerto PRIMERO (Render necesita detectarlo)
   app.get('/', (_, res) => res.send('OK'));
-  app.listen(PORT, () => {
-    console.log(`Servidor escuchando en puerto ${PORT}`);
+  await new Promise((resolve) => {
+    app.listen(PORT, () => {
+      console.log(`Servidor escuchando en puerto ${PORT}`);
+      resolve();
+    });
   });
 
-  // Bot en modo polling
+  // 2. Bot en modo polling (sin await para no bloquear)
   console.log('Iniciando bot en modo polling...');
-  await bot.launch();
+  bot.launch();
   console.log('Bot iniciado. Esperando mensajes...');
 }
 
