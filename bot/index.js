@@ -318,17 +318,78 @@ async function enviarRecordatorios() {
   return enviados;
 }
 
+// ====== SOLICITUD DE VALORACIÓN 48H DESPUÉS ======
+async function enviarSolicitudesReview() {
+  // Buscar reservas de hace 2 días sin review enviado
+  const hace2dias = new Date();
+  hace2dias.setDate(hace2dias.getDate() - 2);
+  const fechaObjetivo = hace2dias.toLocaleDateString('es-ES', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  }).replace(/\//g, '/');
+
+  const { data: reservas, error } = await supabase
+    .from('reservas')
+    .select('*')
+    .eq('fecha', fechaObjetivo)
+    .eq('review_enviado', false)
+    .eq('estado', 'confirmada');
+
+  if (error) {
+    console.error('Error leyendo reservas para review:', error.message);
+    return 0;
+  }
+
+  if (!reservas || reservas.length === 0) return 0;
+
+  let enviados = 0;
+  for (const reserva of reservas) {
+    try {
+      const msg =
+        `Hola ${reserva.nombre || 'de nuevo'}.\n\n` +
+        `Esperamos que disfrutaras de tu visita a Bodega Ruzafa.\n\n` +
+        `Si tienes un momento, tu opinión en Google nos ayuda mucho a seguir mejorando:\n` +
+        `https://g.page/r/bodega-ruzafa/review\n\n` +
+        `Muchas gracias. Hasta pronto,\n` +
+        `Bodega Ruzafa — 667 67 71 42`;
+
+      await bot.telegram.sendMessage(reserva.chat_id, msg);
+
+      await supabase
+        .from('reservas')
+        .update({ review_enviado: true })
+        .eq('id', reserva.id);
+
+      enviados++;
+    } catch (err) {
+      console.error(`Error enviando review a ${reserva.chat_id}:`, err.message);
+    }
+  }
+
+  return enviados;
+}
+
 // ====== ARRANQUE ======
 async function start() {
   app.get('/', (_, res) => res.send('OK'));
 
-  // Endpoint que llama cron-job.org cada hora
+  // Endpoint recordatorios 24h — llamado cada hora desde cron-job.org
   app.get('/recordatorios', async (req, res) => {
     try {
       const enviados = await enviarRecordatorios();
       res.json({ ok: true, recordatorios_enviados: enviados });
     } catch (err) {
       console.error('Error en /recordatorios:', err.message);
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
+  // Endpoint reviews 48h después — llamado cada hora desde cron-job.org
+  app.get('/reviews', async (req, res) => {
+    try {
+      const enviados = await enviarSolicitudesReview();
+      res.json({ ok: true, reviews_enviados: enviados });
+    } catch (err) {
+      console.error('Error en /reviews:', err.message);
       res.status(500).json({ ok: false, error: err.message });
     }
   });
