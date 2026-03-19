@@ -214,6 +214,18 @@ bot.on('text', async (ctx) => {
       } catch (err) {
         console.error('Error notificando al admin:', err.message);
       }
+
+      // Confirmación al cliente
+      const confirmMsg =
+        `Reserva confirmada en Bodega Ruzafa\n\n` +
+        `Nombre:   ${datos.nombre   || '—'}\n` +
+        `Fecha:    ${datos.fecha    || '—'}\n` +
+        `Personas: ${datos.personas || '—'}\n` +
+        `Teléfono: ${datos.telefono || '—'}\n\n` +
+        `Nos pondremos en contacto contigo para confirmar los detalles.\n` +
+        `Cualquier cambio puedes llamarnos al 667 67 71 42.\n\n` +
+        `Hasta pronto, Bodega Ruzafa.`;
+      await ctx.reply(confirmMsg);
     }
 
     // Respuesta limpia al usuario
