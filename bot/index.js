@@ -170,10 +170,11 @@ Solo cuando el cliente confirme (sí, ok, perfecto, correcto, bien, vale, yes, s
 [RESERVA: nombre=X, fecha=DD/MM/YYYY, hora=HH:MM, personas=X, telefono=X]
 
 IMPORTANTE SOBRE RESERVAS:
-- Cuando escribas la etiqueta [RESERVA: ...] no escribas NADA MÁS en ese mensaje. Ni "perfecto", ni "anotado", ni despedida. Solo la etiqueta sola. El sistema se encarga del resto.
-- Una vez escrita la etiqueta la reserva está COMPLETADA. No vuelvas a mostrar el resumen ni la etiqueta en ningún mensaje posterior.
-- Si el cliente dice "gracias" o cualquier cosa después de confirmar, responde con naturalidad. La reserva ya está hecha.
-- Si el cliente corrige algo ANTES de confirmar, actualiza y vuelve a mostrar el resumen.
+- El resumen de datos solo se muestra UNA vez antes de pedir confirmación. Nunca lo repitas.
+- Cuando escribas la etiqueta no escribas NADA más. Ni "perfecto", ni "anotado", ni despedida. Solo la etiqueta. El sistema envía la confirmación automáticamente.
+- Una vez escrita la etiqueta la reserva está COMPLETADA. No la repitas nunca más.
+- Si el cliente escribe algo después de confirmar, responde con naturalidad como en cualquier conversación.
+- Si el cliente corrige algo antes de confirmar, actualiza los datos y muestra el resumen corregido.
 
 VINOS DISPONIBLES:
 ${vinosTexto}`;
@@ -329,23 +330,9 @@ bot.on('text', async (ctx) => {
         console.error('Error notificando al admin:', err.message);
       }
 
-      // Confirmación final al cliente
-      const confirmMsg =
-        `Reserva confirmada en Bodega Ruzafa\n\n` +
-        `Nombre:   ${datos.nombre   || '—'}\n` +
-        `Fecha:    ${datos.fecha    || '—'}\n` +
-        `Hora:     ${datos.hora     || '—'}\n` +
-        `Personas: ${datos.personas || '—'}\n` +
-        `Teléfono: ${datos.telefono || '—'}\n\n` +
-        `Nos pondremos en contacto contigo para confirmar los detalles.\n` +
-        `Para cualquier cambio llámanos al 667 67 71 42.\n\n` +
-        `Hasta pronto, Bodega Ruzafa.`;
-      await ctx.reply(confirmMsg);
-
-      // Inyectar en el historial que la reserva ya está completada
-      // para que Claude no vuelva a generarla en mensajes posteriores
-      addToHistory(chatId, 'user', '[SISTEMA: La reserva ha sido registrada y confirmada al cliente. No vuelvas a mostrar los datos de la reserva ni la etiqueta [RESERVA:...]. La conversación puede continuar con normalidad.]');
-      addToHistory(chatId, 'assistant', 'Entendido. La reserva está completada y registrada.');
+      // Inyectar en el historial que la reserva está completada
+      addToHistory(chatId, 'user', '[SISTEMA: Reserva registrada correctamente. No vuelvas a mostrar los datos ni la etiqueta [RESERVA:...]. Continúa la conversación con normalidad.]');
+      addToHistory(chatId, 'assistant', 'Entendido.');
     } else {
       // Respuesta normal al usuario
       const replyClean = fullReply.replace(/\[RESERVA:[^\]]+\]/gi, '').trim();
