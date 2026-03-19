@@ -1,8 +1,8 @@
 require('dotenv').config();
 
-const { Telegraf }  = require('telegraf');
-const Anthropic     = require('@anthropic-ai/sdk');
-const express       = require('express');
+const { Telegraf }     = require('telegraf');
+const Anthropic        = require('@anthropic-ai/sdk');
+const express          = require('express');
 const { createClient } = require('@supabase/supabase-js');
 
 // ====== CONFIGURACIÓN ======
@@ -18,15 +18,15 @@ if (!TELEGRAM_TOKEN || !ANTHROPIC_KEY || !ADMIN_CHAT_ID || !SUPABASE_URL || !SUP
   process.exit(1);
 }
 
-const bot      = new Telegraf(TELEGRAM_TOKEN);
+const bot       = new Telegraf(TELEGRAM_TOKEN);
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY });
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-const app      = express();
+const supabase  = createClient(SUPABASE_URL, SUPABASE_KEY);
+const app       = express();
 app.use(express.json());
 
-// ====== MEMORIA DE CONVERSACIÓN (en RAM, por sesión) ======
+// ====== MEMORIA DE CONVERSACIÓN (RAM, por sesión) ======
 const conversations = new Map();
-const MAX_HISTORY   = 10;
+const MAX_HISTORY   = 20; // más historial para manejar el flujo de confirmación
 
 function getHistory(chatId) {
   if (!conversations.has(chatId)) conversations.set(chatId, []);
@@ -44,7 +44,6 @@ async function upsertCliente(chatId, nombre, telefono) {
   const update = { ultima_visita: new Date().toISOString() };
   if (nombre)   update.nombre   = nombre;
   if (telefono) update.telefono = telefono;
-
   await supabase
     .from('clientes')
     .upsert({ chat_id: chatId, ...update }, { onConflict: 'chat_id' });
@@ -56,24 +55,22 @@ async function guardarReserva(chatId, datos) {
     chat_id:  chatId,
     nombre:   datos.nombre   || null,
     fecha:    datos.fecha    || null,
+    hora:     datos.hora     || null,
     personas: datos.personas || null,
     telefono: datos.telefono || null,
-    estado:   'pendiente',
+    estado:   'confirmada',
   });
   if (error) console.error('Error guardando reserva:', error.message);
 }
 
 async function getReservasHoy() {
-  // Reservas creadas desde medianoche de hoy
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
-
   const { data, error } = await supabase
     .from('reservas')
     .select('*')
     .gte('created_at', hoy.toISOString())
     .order('created_at', { ascending: true });
-
   if (error) {
     console.error('Error leyendo reservas:', error.message);
     return [];
@@ -82,12 +79,18 @@ async function getReservasHoy() {
 }
 
 // ====== HELPERS ======
-function extractReservation(text) {
-  const match = text.match(/\[RESERVA:\s*([^\]]+)\]/i);
+function getFechaHoy() {
+  return new Date().toLocaleDateString('es-ES', {
+    weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
+  });
+}
+
+function extractTag(text, tag) {
+  const match = text.match(new RegExp(`\\[${tag}:\\s*([^\\]]+)\\]`, 'i'));
   return match ? match[1] : null;
 }
 
-function parseReservation(str) {
+function parseTagData(str) {
   const data = {};
   str.split(',').forEach(part => {
     const [key, ...rest] = part.split('=');
@@ -96,8 +99,10 @@ function parseReservation(str) {
   return data;
 }
 
-// ====== SYSTEM PROMPT ======
-const SYSTEM_PROMPT = `Eres Sommelier BR, el asistente virtual de Bodega Ruzafa, ubicada en C/ Cádiz 45, Ruzafa, Valencia.
+// ====== SYSTEM PROMPT (con fecha actual inyectada) ======
+function buildSystemPrompt() {
+  return `Eres Sommelier BR, el asistente virtual de Bodega Ruzafa, ubicada en C/ Cádiz 45, Ruzafa, Valencia.
+La fecha de hoy es: ${getFechaHoy()}.
 
 REGLAS ABSOLUTAS:
 - Cero emojis en todos tus mensajes
@@ -114,11 +119,29 @@ INFORMACIÓN DEL NEGOCIO:
 - Servicios: venta de vinos, cavas, licores, aceites y productos gourmet. Catas semanales. Eventos privados.
 - Próxima cata: sábado a las 18:00, 12 euros por persona, plazas limitadas.
 
-PROTOCOLO DE RESERVAS:
-- Para gestionar una reserva (cata, evento o visita), pide en orden: nombre, fecha, número de personas y teléfono.
-- Cuando tengas todos los datos, escribe EXACTAMENTE esta etiqueta al final de tu respuesta (sin modificar el formato):
-  [RESERVA: nombre=X, fecha=X, personas=X, telefono=X]
-- Tras escribir la etiqueta, confirma al cliente que la reserva está registrada y que os pondremos en contacto.
+PROTOCOLO DE RESERVAS — sigue estos pasos en orden:
+1. Pide el nombre completo.
+2. Pide la fecha. El cliente puede escribirla como quiera ("el sábado", "el 22", "la próxima semana"). Tú la conviertes a formato DD/MM/YYYY usando la fecha de hoy como referencia.
+3. Pide la hora en formato militar (ejemplo: 18:00, 20:00). Indica al cliente que use ese formato.
+4. Pide el número de personas.
+5. Pide el teléfono de contacto.
+
+Una vez tengas los 5 datos, muestra el siguiente resumen EXACTAMENTE así y pregunta si es correcto:
+
+"Antes de confirmar, revisa los datos de tu reserva:
+
+Nombre:   [nombre]
+Fecha:    [DD/MM/YYYY]
+Hora:     [HH:MM]
+Personas: [número]
+Teléfono: [teléfono]
+
+¿Es todo correcto? Responde SI para confirmar o indícame qué cambiar."
+
+IMPORTANTE — solo cuando el cliente confirme con SI, sí, ok, correcto, perfecto, confirmado o similar, escribe al final de tu respuesta la etiqueta:
+[RESERVA: nombre=X, fecha=DD/MM/YYYY, hora=HH:MM, personas=X, telefono=X]
+
+Si el cliente dice que algo está mal, actualiza el dato, muestra el resumen corregido y vuelve a preguntar si es correcto. No escribas la etiqueta [RESERVA] hasta que el cliente confirme.
 
 MODO ADMIN:
 - Si el mensaje es exactamente JAIRO2024, mostrar las reservas del día que te proporcione el sistema.
@@ -130,6 +153,7 @@ VINOS DISPONIBLES:
 - Carmen Crianza 2018, Tempranillo, 28 euros. Roble, cuero, cereza negra.
 - Calle Sueca Rosado 2023, Bobal, 10 euros. Ligero, fresa, melocotón.
 - Gran Ruzafa 2016, Blend, 55 euros. Nuestra joya exclusiva.`;
+}
 
 // ====== MANEJADORES DEL BOT ======
 
@@ -156,7 +180,7 @@ bot.on('text', async (ctx) => {
     }
     const lista = reservas
       .map((r, i) =>
-        `${i + 1}. ${r.nombre || '—'} | ${r.fecha || '—'} | ${r.personas || '—'} personas | Tel: ${r.telefono || '—'}`
+        `${i + 1}. ${r.nombre || '—'} | ${r.fecha || '—'} a las ${r.hora || '—'} | ${r.personas || '—'} personas | Tel: ${r.telefono || '—'}`
       )
       .join('\n');
     return ctx.reply(`Reservas de hoy:\n\n${lista}`);
@@ -184,29 +208,28 @@ bot.on('text', async (ctx) => {
     const response = await anthropic.messages.create({
       model:      'claude-sonnet-4-6',
       max_tokens: 1024,
-      system:     SYSTEM_PROMPT,
+      system:     buildSystemPrompt(),
       messages:   getHistory(chatId),
     });
 
     const fullReply = response.content[0].text;
     addToHistory(chatId, 'assistant', fullReply);
 
-    // Detectar reserva
-    const reservaStr = extractReservation(fullReply);
+    // Detectar confirmación de reserva
+    const reservaStr = extractTag(fullReply, 'RESERVA');
     if (reservaStr) {
-      const datos = parseReservation(reservaStr);
+      const datos = parseTagData(reservaStr);
 
       // Guardar en Supabase
       await guardarReserva(chatId, datos);
-
-      // Guardar/actualizar cliente con nombre y teléfono
       await upsertCliente(chatId, datos.nombre, datos.telefono);
 
       // Notificar al admin
       const adminMsg =
-        `Nueva reserva en Bodega Ruzafa\n\n` +
+        `Nueva reserva confirmada — Bodega Ruzafa\n\n` +
         `Nombre:   ${datos.nombre   || 'N/A'}\n` +
         `Fecha:    ${datos.fecha    || 'N/A'}\n` +
+        `Hora:     ${datos.hora     || 'N/A'}\n` +
         `Personas: ${datos.personas || 'N/A'}\n` +
         `Teléfono: ${datos.telefono || 'N/A'}`;
       try {
@@ -215,22 +238,23 @@ bot.on('text', async (ctx) => {
         console.error('Error notificando al admin:', err.message);
       }
 
-      // Confirmación al cliente
+      // Confirmación final al cliente
       const confirmMsg =
         `Reserva confirmada en Bodega Ruzafa\n\n` +
         `Nombre:   ${datos.nombre   || '—'}\n` +
         `Fecha:    ${datos.fecha    || '—'}\n` +
+        `Hora:     ${datos.hora     || '—'}\n` +
         `Personas: ${datos.personas || '—'}\n` +
         `Teléfono: ${datos.telefono || '—'}\n\n` +
         `Nos pondremos en contacto contigo para confirmar los detalles.\n` +
-        `Cualquier cambio puedes llamarnos al 667 67 71 42.\n\n` +
+        `Para cualquier cambio llámanos al 667 67 71 42.\n\n` +
         `Hasta pronto, Bodega Ruzafa.`;
       await ctx.reply(confirmMsg);
+    } else {
+      // Respuesta normal al usuario
+      const replyClean = fullReply.replace(/\[RESERVA:[^\]]+\]/gi, '').trim();
+      await ctx.reply(replyClean);
     }
-
-    // Respuesta limpia al usuario
-    const replyClean = fullReply.replace(/\[RESERVA:[^\]]+\]/gi, '').trim();
-    await ctx.reply(replyClean);
 
   } catch (err) {
     console.error('Error en conversación IA:', err.message);
