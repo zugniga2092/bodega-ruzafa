@@ -99,8 +99,21 @@ function parseTagData(str) {
   return data;
 }
 
-// ====== SYSTEM PROMPT (con fecha actual inyectada) ======
-function buildSystemPrompt() {
+// ====== SUPABASE: VINOS ======
+async function getVinos() {
+  const { data, error } = await supabase
+    .from('vinos')
+    .select('nombre, variedad, precio, descripcion')
+    .eq('activo', true)
+    .order('nombre', { ascending: true });
+  if (error || !data || data.length === 0) return null;
+  return data.map(v => `- ${v.nombre}, ${v.variedad}, ${v.precio} euros. ${v.descripcion}`).join('\n');
+}
+
+// ====== SYSTEM PROMPT (con fecha y vinos de la BD) ======
+async function buildSystemPrompt() {
+  const cartaVinos = await getVinos();
+  const vinosTexto = cartaVinos || '- Consulta disponibilidad con el sommelier.';
   return `Eres BR, el sommelier de Bodega Ruzafa, una bodega boutique en C/ Cádiz 45, Ruzafa, Valencia.
 La fecha de hoy es: ${getFechaHoy()}.
 
@@ -155,11 +168,7 @@ Solo cuando el cliente confirme (sí, ok, perfecto, correcto, bien, vale o simil
 Si el cliente corrige algo, actualiza y vuelve a mostrar el resumen. No escribas la etiqueta hasta que confirme.
 
 VINOS DISPONIBLES:
-- Ruzafa Reserva Tinto 2019, Monastrell, 18 euros. Fruta negra, especias, mineral.
-- El Barrio Blanco 2022, Verdejo, 12 euros. Cítrico, fresco, floral.
-- Carmen Crianza 2018, Tempranillo, 28 euros. Roble, cuero, cereza negra.
-- Calle Sueca Rosado 2023, Bobal, 10 euros. Ligero, fresa, melocotón.
-- Gran Ruzafa 2016, Blend, 55 euros. Nuestra joya exclusiva.`;
+${vinosTexto}`;
 }
 
 // ====== MANEJADORES DEL BOT ======
@@ -279,7 +288,7 @@ bot.on('text', async (ctx) => {
     const response = await anthropic.messages.create({
       model:      'claude-sonnet-4-6',
       max_tokens: 1024,
-      system:     buildSystemPrompt(),
+      system:     await buildSystemPrompt(),
       messages:   getHistory(chatId),
     });
 
