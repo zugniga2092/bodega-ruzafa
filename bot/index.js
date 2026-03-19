@@ -448,6 +448,53 @@ async function enviarSolicitudesReview() {
   return enviados;
 }
 
+// ====== REACTIVACIÓN DE CLIENTES INACTIVOS ======
+async function reactivarClientes() {
+  // Clientes sin reserva en los últimos 30 días
+  // y sin mensaje de reactivación en los últimos 30 días
+  const hace30dias = new Date();
+  hace30dias.setDate(hace30dias.getDate() - 30);
+
+  const { data: clientes, error } = await supabase
+    .from('clientes')
+    .select('*')
+    .lt('ultima_visita', hace30dias.toISOString())
+    .or(`ultima_reactivacion.is.null,ultima_reactivacion.lt.${hace30dias.toISOString()}`)
+    .not('nombre', 'is', null);
+
+  if (error) {
+    console.error('Error leyendo clientes inactivos:', error.message);
+    return 0;
+  }
+
+  if (!clientes || clientes.length === 0) return 0;
+
+  let enviados = 0;
+  for (const cliente of clientes) {
+    try {
+      const msg =
+        `Hola ${cliente.nombre.split(' ')[0]}.\n\n` +
+        `Hace tiempo que no te vemos por Bodega Ruzafa. Esta semana tenemos cata el sábado a las 18:00, ` +
+        `12 euros por persona y plazas limitadas.\n\n` +
+        `Si te apetece volver, escríbenos aquí o llámanos al 667 67 71 42. ` +
+        `Estaremos encantados de verte.`;
+
+      await bot.telegram.sendMessage(cliente.chat_id, msg);
+
+      await supabase
+        .from('clientes')
+        .update({ ultima_reactivacion: new Date().toISOString() })
+        .eq('id', cliente.id);
+
+      enviados++;
+    } catch (err) {
+      console.error(`Error reactivando cliente ${cliente.chat_id}:`, err.message);
+    }
+  }
+
+  return enviados;
+}
+
 // ====== ARRANQUE ======
 async function start() {
   app.get('/', (_, res) => res.send('OK'));
@@ -470,6 +517,17 @@ async function start() {
       res.json({ ok: true, reviews_enviados: enviados });
     } catch (err) {
       console.error('Error en /reviews:', err.message);
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
+  // Endpoint reactivación — llamado una vez a la semana desde cron-job.org
+  app.get('/reactivar', async (req, res) => {
+    try {
+      const enviados = await reactivarClientes();
+      res.json({ ok: true, clientes_reactivados: enviados });
+    } catch (err) {
+      console.error('Error en /reactivar:', err.message);
       res.status(500).json({ ok: false, error: err.message });
     }
   });
