@@ -255,14 +255,17 @@ bot.on('text', async (ctx) => {
   }
 
   // ── ADMIN: ayuda ──
-  if (userMsg === 'AYUDA' && esAdmin) {
+  if (userMsg === 'AYUDA') {
+    if (!esAdmin) return ctx.reply('Solo puedo ayudarte con temas relacionados con Bodega Ruzafa. ¿En qué puedo ayudarte?');
     return ctx.reply(
       'Comandos disponibles:\n\n' +
-      'JAIRO2024 — Reservas de hoy\n' +
-      'SEMANA    — Reservas de la semana\n' +
-      'CLIENTES  — Total de clientes\n' +
+      'JAIRO2024  — Reservas de hoy\n' +
+      'SEMANA     — Reservas de la semana\n' +
+      'CLIENTES   — Total de clientes\n' +
       'CANCELAR 2 — Cancela la reserva nº 2 de hoy\n' +
-      'PROMO     — Enviar notificación de oferta'
+      'PROMO      — Enviar notificación de oferta\n' +
+      'AYUDA      — Ver esta lista\n\n' +
+      `Tu chat_id: ${chatId}`
     );
   }
 
