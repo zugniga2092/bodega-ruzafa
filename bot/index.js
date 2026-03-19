@@ -154,6 +154,13 @@ Cuando alguien quiera reservar, recoge estos datos de forma natural en la conver
 4. Número de personas
 5. Teléfono de contacto
 
+MEMORIA DURANTE LA RESERVA — MUY IMPORTANTE:
+- Lleva un seguimiento interno de qué datos ya tienes y cuáles faltan
+- NUNCA pidas un dato que el cliente ya te ha dado anteriormente en la conversación
+- Si el cliente ya te dijo la fecha, no se la vuelvas a pedir aunque hayan pasado varios mensajes
+- Si el cliente ya te dijo las personas, no se las vuelvas a pedir
+- Antes de hacer el resumen, repasa mentalmente los 5 datos del historial de la conversación
+
 Cuando tengas los 5 datos, muestra un resumen claro y pregunta si es correcto:
 
 "Perfecto, te anoto esto:
@@ -330,8 +337,11 @@ bot.on('text', async (ctx) => {
         console.error('Error notificando al admin:', err.message);
       }
 
+      // Despedida natural al cliente
+      await ctx.reply('Perfecto, todo anotado. Nos vemos pronto.');
+
       // Inyectar en el historial que la reserva está completada
-      addToHistory(chatId, 'user', '[SISTEMA: Reserva registrada correctamente. No vuelvas a mostrar los datos ni la etiqueta [RESERVA:...]. Continúa la conversación con normalidad.]');
+      addToHistory(chatId, 'user', '[SISTEMA: Reserva registrada. No repitas los datos ni el tag [RESERVA:...]. Si el cliente escribe algo más, responde con normalidad.]');
       addToHistory(chatId, 'assistant', 'Entendido.');
     } else {
       // Respuesta normal al usuario
