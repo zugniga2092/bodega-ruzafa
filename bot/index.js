@@ -266,9 +266,72 @@ bot.on('message', async (ctx) => {
   await ctx.reply('Solo puedo procesar mensajes de texto. ¿En qué puedo ayudarte?');
 });
 
+// ====== RECORDATORIOS 24H ======
+async function enviarRecordatorios() {
+  // Buscar reservas de mañana que no hayan recibido recordatorio
+  const manana = new Date();
+  manana.setDate(manana.getDate() + 1);
+  const fechaManana = manana.toLocaleDateString('es-ES', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  }).replace(/\//g, '/'); // formato DD/MM/YYYY
+
+  const { data: reservas, error } = await supabase
+    .from('reservas')
+    .select('*')
+    .eq('fecha', fechaManana)
+    .eq('recordatorio_enviado', false)
+    .eq('estado', 'confirmada');
+
+  if (error) {
+    console.error('Error leyendo reservas para recordatorio:', error.message);
+    return 0;
+  }
+
+  if (!reservas || reservas.length === 0) return 0;
+
+  let enviados = 0;
+  for (const reserva of reservas) {
+    try {
+      const msg =
+        `Recordatorio de tu reserva en Bodega Ruzafa\n\n` +
+        `Nombre:   ${reserva.nombre   || '—'}\n` +
+        `Fecha:    ${reserva.fecha    || '—'}\n` +
+        `Hora:     ${reserva.hora     || '—'}\n` +
+        `Personas: ${reserva.personas || '—'}\n\n` +
+        `Te esperamos mañana. Cualquier cambio llámanos al 667 67 71 42.\n\n` +
+        `Bodega Ruzafa — C/ Cádiz 45, Ruzafa, Valencia.`;
+
+      await bot.telegram.sendMessage(reserva.chat_id, msg);
+
+      // Marcar como enviado
+      await supabase
+        .from('reservas')
+        .update({ recordatorio_enviado: true })
+        .eq('id', reserva.id);
+
+      enviados++;
+    } catch (err) {
+      console.error(`Error enviando recordatorio a ${reserva.chat_id}:`, err.message);
+    }
+  }
+
+  return enviados;
+}
+
 // ====== ARRANQUE ======
 async function start() {
   app.get('/', (_, res) => res.send('OK'));
+
+  // Endpoint que llama cron-job.org cada hora
+  app.get('/recordatorios', async (req, res) => {
+    try {
+      const enviados = await enviarRecordatorios();
+      res.json({ ok: true, recordatorios_enviados: enviados });
+    } catch (err) {
+      console.error('Error en /recordatorios:', err.message);
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
   await new Promise((resolve) => {
     app.listen(PORT, () => {
       console.log(`Servidor escuchando en puerto ${PORT}`);
