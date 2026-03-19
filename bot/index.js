@@ -1,51 +1,87 @@
 require('dotenv').config();
 
-const { Telegraf } = require('telegraf');
-const Anthropic = require('@anthropic-ai/sdk');
-const express = require('express');
+const { Telegraf }  = require('telegraf');
+const Anthropic     = require('@anthropic-ai/sdk');
+const express       = require('express');
+const { createClient } = require('@supabase/supabase-js');
 
 // ====== CONFIGURACIÓN ======
-const TELEGRAM_TOKEN  = process.env.TELEGRAM_TOKEN;
-const ANTHROPIC_KEY   = process.env.ANTHROPIC_API_KEY;
-const ADMIN_CHAT_ID   = process.env.ADMIN_CHAT_ID;
-const WEBHOOK_URL     = process.env.WEBHOOK_URL; // Render lo pone automático si lo configuras
-const PORT            = process.env.PORT || 3000;
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
+const ADMIN_CHAT_ID  = process.env.ADMIN_CHAT_ID;
+const SUPABASE_URL   = process.env.SUPABASE_URL;
+const SUPABASE_KEY   = process.env.SUPABASE_KEY;
+const PORT           = process.env.PORT || 3000;
 
-if (!TELEGRAM_TOKEN || !ANTHROPIC_KEY || !ADMIN_CHAT_ID) {
-  console.error('Faltan variables de entorno. Revisa TELEGRAM_TOKEN, ANTHROPIC_API_KEY y ADMIN_CHAT_ID.');
+if (!TELEGRAM_TOKEN || !ANTHROPIC_KEY || !ADMIN_CHAT_ID || !SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('Faltan variables de entorno. Revisa TELEGRAM_TOKEN, ANTHROPIC_API_KEY, ADMIN_CHAT_ID, SUPABASE_URL y SUPABASE_KEY.');
   process.exit(1);
 }
 
-const bot       = new Telegraf(TELEGRAM_TOKEN);
+const bot      = new Telegraf(TELEGRAM_TOKEN);
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY });
-const app       = express();
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const app      = express();
 app.use(express.json());
 
-// ====== MEMORIA DE CONVERSACIÓN ======
-// Map<chatId, { messages: [], firstSeen: Date }>
+// ====== MEMORIA DE CONVERSACIÓN (en RAM, por sesión) ======
 const conversations = new Map();
-const MAX_HISTORY   = 10; // máximo 10 mensajes (5 intercambios)
+const MAX_HISTORY   = 10;
 
 function getHistory(chatId) {
-  if (!conversations.has(chatId)) {
-    conversations.set(chatId, { messages: [], firstSeen: new Date() });
-  }
-  return conversations.get(chatId).messages;
+  if (!conversations.has(chatId)) conversations.set(chatId, []);
+  return conversations.get(chatId);
 }
 
 function addToHistory(chatId, role, content) {
   const history = getHistory(chatId);
   history.push({ role, content });
-  // Recortar al máximo configurado (mensajes más recientes)
-  if (history.length > MAX_HISTORY) {
-    history.splice(0, history.length - MAX_HISTORY);
-  }
+  if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
 }
 
-// ====== RESERVAS EN MEMORIA ======
-// Array de { nombre, fecha, personas, telefono, chatId, timestamp }
-const reservations = [];
+// ====== SUPABASE: CLIENTES ======
+async function upsertCliente(chatId, nombre, telefono) {
+  const update = { ultima_visita: new Date().toISOString() };
+  if (nombre)   update.nombre   = nombre;
+  if (telefono) update.telefono = telefono;
 
+  await supabase
+    .from('clientes')
+    .upsert({ chat_id: chatId, ...update }, { onConflict: 'chat_id' });
+}
+
+// ====== SUPABASE: RESERVAS ======
+async function guardarReserva(chatId, datos) {
+  const { error } = await supabase.from('reservas').insert({
+    chat_id:  chatId,
+    nombre:   datos.nombre   || null,
+    fecha:    datos.fecha    || null,
+    personas: datos.personas || null,
+    telefono: datos.telefono || null,
+    estado:   'pendiente',
+  });
+  if (error) console.error('Error guardando reserva:', error.message);
+}
+
+async function getReservasHoy() {
+  // Reservas creadas desde medianoche de hoy
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('reservas')
+    .select('*')
+    .gte('created_at', hoy.toISOString())
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error leyendo reservas:', error.message);
+    return [];
+  }
+  return data || [];
+}
+
+// ====== HELPERS ======
 function extractReservation(text) {
   const match = text.match(/\[RESERVA:\s*([^\]]+)\]/i);
   return match ? match[1] : null;
@@ -55,9 +91,7 @@ function parseReservation(str) {
   const data = {};
   str.split(',').forEach(part => {
     const [key, ...rest] = part.split('=');
-    if (key && rest.length) {
-      data[key.trim()] = rest.join('=').trim();
-    }
+    if (key && rest.length) data[key.trim()] = rest.join('=').trim();
   });
   return data;
 }
@@ -72,6 +106,7 @@ REGLAS ABSOLUTAS:
 - Máximo 3 párrafos cortos
 - Responde siempre en español de España
 - Tono experto, cálido, cercano
+- Si el usuario pregunta algo que no tenga que ver con Bodega Ruzafa, vinos, reservas, catas, eventos o productos del negocio, responde únicamente: "Solo puedo ayudarte con temas relacionados con Bodega Ruzafa. ¿En qué puedo ayudarte?"
 
 INFORMACIÓN DEL NEGOCIO:
 - Teléfono: 667 67 71 42
@@ -98,10 +133,10 @@ VINOS DISPONIBLES:
 
 // ====== MANEJADORES DEL BOT ======
 
-// /start — primera presentación
 bot.start(async (ctx) => {
   const chatId = String(ctx.chat.id);
-  conversations.delete(chatId); // Reiniciar historial en /start
+  conversations.delete(chatId);
+  await upsertCliente(chatId, null, null);
   await ctx.reply(
     'Bienvenido a Bodega Ruzafa. Soy Sommelier BR, tu asistente.\n\n' +
     'Puedo ayudarte con información sobre nuestros vinos, próximas catas y eventos privados. ' +
@@ -109,24 +144,22 @@ bot.start(async (ctx) => {
   );
 });
 
-// Mensajes de texto
 bot.on('text', async (ctx) => {
   const chatId  = String(ctx.chat.id);
   const userMsg = ctx.message.text.trim();
 
-  // ── MODO ADMIN: listar reservas del día ──
+  // ── MODO ADMIN: reservas del día ──
   if (userMsg === 'JAIRO2024') {
-    const hoy = new Date().toLocaleDateString('es-ES');
-    const hoyReservas = reservations.filter(r => r.fecha_registro === hoy);
-    if (hoyReservas.length === 0) {
-      return ctx.reply(`No hay reservas registradas hoy (${hoy}).`);
+    const reservas = await getReservasHoy();
+    if (reservas.length === 0) {
+      return ctx.reply('No hay reservas registradas hoy.');
     }
-    const lista = hoyReservas
+    const lista = reservas
       .map((r, i) =>
         `${i + 1}. ${r.nombre || '—'} | ${r.fecha || '—'} | ${r.personas || '—'} personas | Tel: ${r.telefono || '—'}`
       )
       .join('\n');
-    return ctx.reply(`Reservas del ${hoy}:\n\n${lista}`);
+    return ctx.reply(`Reservas de hoy:\n\n${lista}`);
   }
 
   // ── MODO PROMO ──
@@ -134,11 +167,11 @@ bot.on('text', async (ctx) => {
     try {
       await bot.telegram.sendMessage(
         ADMIN_CHAT_ID,
-        'Activacion de PROMO desde el bot.\n\nRedacta la oferta y envíala a tus clientes desde @BodegaRuzafaBot.'
+        'Activacion de PROMO desde el bot.\n\nRedacta la oferta y envíala a tus clientes.'
       );
       return ctx.reply('Notificación enviada al administrador. La oferta se enviará en breve.');
     } catch (err) {
-      console.error('Error enviando PROMO al admin:', err.message);
+      console.error('Error enviando PROMO:', err.message);
       return ctx.reply('No se pudo contactar con el administrador. Inténtalo de nuevo.');
     }
   }
@@ -146,7 +179,6 @@ bot.on('text', async (ctx) => {
   // ── CONVERSACIÓN CON IA ──
   try {
     await ctx.sendChatAction('typing');
-
     addToHistory(chatId, 'user', userMsg);
 
     const response = await anthropic.messages.create({
@@ -157,18 +189,18 @@ bot.on('text', async (ctx) => {
     });
 
     const fullReply = response.content[0].text;
-
-    // Guardar respuesta en historial
     addToHistory(chatId, 'assistant', fullReply);
 
-    // Detectar y procesar reserva
+    // Detectar reserva
     const reservaStr = extractReservation(fullReply);
     if (reservaStr) {
       const datos = parseReservation(reservaStr);
-      datos.fecha_registro = new Date().toLocaleDateString('es-ES');
-      datos.chatId         = chatId;
-      datos.timestamp      = new Date().toISOString();
-      reservations.push(datos);
+
+      // Guardar en Supabase
+      await guardarReserva(chatId, datos);
+
+      // Guardar/actualizar cliente con nombre y teléfono
+      await upsertCliente(chatId, datos.nombre, datos.telefono);
 
       // Notificar al admin
       const adminMsg =
@@ -176,9 +208,7 @@ bot.on('text', async (ctx) => {
         `Nombre:   ${datos.nombre   || 'N/A'}\n` +
         `Fecha:    ${datos.fecha    || 'N/A'}\n` +
         `Personas: ${datos.personas || 'N/A'}\n` +
-        `Teléfono: ${datos.telefono || 'N/A'}\n\n` +
-        `Registrada: ${datos.fecha_registro}`;
-
+        `Teléfono: ${datos.telefono || 'N/A'}`;
       try {
         await bot.telegram.sendMessage(ADMIN_CHAT_ID, adminMsg);
       } catch (err) {
@@ -186,7 +216,7 @@ bot.on('text', async (ctx) => {
       }
     }
 
-    // Enviar respuesta limpia al usuario (sin la etiqueta [RESERVA: ...])
+    // Respuesta limpia al usuario
     const replyClean = fullReply.replace(/\[RESERVA:[^\]]+\]/gi, '').trim();
     await ctx.reply(replyClean);
 
@@ -196,14 +226,12 @@ bot.on('text', async (ctx) => {
   }
 });
 
-// Mensajes no-texto (fotos, stickers, etc.)
 bot.on('message', async (ctx) => {
   await ctx.reply('Solo puedo procesar mensajes de texto. ¿En qué puedo ayudarte?');
 });
 
 // ====== ARRANQUE ======
 async function start() {
-  // 1. Express se vincula al puerto PRIMERO (Render necesita detectarlo)
   app.get('/', (_, res) => res.send('OK'));
   await new Promise((resolve) => {
     app.listen(PORT, () => {
@@ -212,7 +240,6 @@ async function start() {
     });
   });
 
-  // 2. Bot en modo polling (sin await para no bloquear)
   console.log('Iniciando bot en modo polling...');
   bot.launch();
   console.log('Bot iniciado. Esperando mensajes...');
@@ -223,6 +250,5 @@ start().catch(err => {
   process.exit(1);
 });
 
-// Parada limpia
 process.once('SIGINT',  () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
