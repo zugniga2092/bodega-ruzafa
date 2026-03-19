@@ -172,18 +172,82 @@ bot.on('text', async (ctx) => {
   const chatId  = String(ctx.chat.id);
   const userMsg = ctx.message.text.trim();
 
-  // ── MODO ADMIN: reservas del día ──
+  // ── SOLO ADMIN: verificar que es Jairo ──
+  const esAdmin = chatId === String(ADMIN_CHAT_ID);
+
+  // ── ADMIN: reservas de hoy ──
   if (userMsg === 'JAIRO2024') {
+    if (!esAdmin) return ctx.reply('Solo puedo ayudarte con temas relacionados con Bodega Ruzafa. ¿En qué puedo ayudarte?');
     const reservas = await getReservasHoy();
-    if (reservas.length === 0) {
-      return ctx.reply('No hay reservas registradas hoy.');
-    }
+    if (reservas.length === 0) return ctx.reply('No hay reservas registradas hoy.');
     const lista = reservas
-      .map((r, i) =>
-        `${i + 1}. ${r.nombre || '—'} | ${r.fecha || '—'} a las ${r.hora || '—'} | ${r.personas || '—'} personas | Tel: ${r.telefono || '—'}`
-      )
+      .map((r, i) => `${i + 1}. ${r.nombre || '—'} | ${r.fecha || '—'} a las ${r.hora || '—'} | ${r.personas || '—'} personas | Tel: ${r.telefono || '—'} | Estado: ${r.estado}`)
       .join('\n');
     return ctx.reply(`Reservas de hoy:\n\n${lista}`);
+  }
+
+  // ── ADMIN: reservas de la semana ──
+  if (userMsg === 'SEMANA') {
+    if (!esAdmin) return ctx.reply('Solo puedo ayudarte con temas relacionados con Bodega Ruzafa. ¿En qué puedo ayudarte?');
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const { data, error } = await supabase
+      .from('reservas')
+      .select('*')
+      .gte('created_at', hoy.toISOString())
+      .eq('estado', 'confirmada')
+      .order('fecha', { ascending: true });
+    if (error || !data || data.length === 0) return ctx.reply('No hay reservas confirmadas esta semana.');
+    const lista = data
+      .map((r, i) => `${i + 1}. ${r.nombre || '—'} | ${r.fecha || '—'} a las ${r.hora || '—'} | ${r.personas || '—'} personas | Tel: ${r.telefono || '—'}`)
+      .join('\n');
+    return ctx.reply(`Reservas de la semana:\n\n${lista}`);
+  }
+
+  // ── ADMIN: total de clientes ──
+  if (userMsg === 'CLIENTES') {
+    if (!esAdmin) return ctx.reply('Solo puedo ayudarte con temas relacionados con Bodega Ruzafa. ¿En qué puedo ayudarte?');
+    const { count, error } = await supabase
+      .from('clientes')
+      .select('*', { count: 'exact', head: true });
+    if (error) return ctx.reply('Error consultando clientes.');
+    return ctx.reply(`Clientes registrados en la BD: ${count}`);
+  }
+
+  // ── ADMIN: cancelar reserva ──
+  if (esAdmin && userMsg.startsWith('CANCELAR ')) {
+    const num = parseInt(userMsg.replace('CANCELAR ', '').trim(), 10);
+    if (isNaN(num)) return ctx.reply('Uso correcto: CANCELAR 2 (número de la lista de hoy)');
+    const reservas = await getReservasHoy();
+    const reserva  = reservas[num - 1];
+    if (!reserva) return ctx.reply(`No existe la reserva número ${num} de hoy.`);
+    const { error } = await supabase
+      .from('reservas')
+      .update({ estado: 'cancelada' })
+      .eq('id', reserva.id);
+    if (error) return ctx.reply('Error al cancelar la reserva.');
+    // Notificar al cliente
+    try {
+      await bot.telegram.sendMessage(
+        reserva.chat_id,
+        `Tu reserva en Bodega Ruzafa del ${reserva.fecha || '—'} a las ${reserva.hora || '—'} ha sido cancelada.\n\nPara cualquier consulta llámanos al 667 67 71 42.`
+      );
+    } catch (err) {
+      console.error('Error notificando cancelación al cliente:', err.message);
+    }
+    return ctx.reply(`Reserva ${num} de ${reserva.nombre || '—'} cancelada. El cliente ha sido notificado.`);
+  }
+
+  // ── ADMIN: ayuda ──
+  if (userMsg === 'AYUDA' && esAdmin) {
+    return ctx.reply(
+      'Comandos disponibles:\n\n' +
+      'JAIRO2024 — Reservas de hoy\n' +
+      'SEMANA    — Reservas de la semana\n' +
+      'CLIENTES  — Total de clientes\n' +
+      'CANCELAR 2 — Cancela la reserva nº 2 de hoy\n' +
+      'PROMO     — Enviar notificación de oferta'
+    );
   }
 
   // ── MODO PROMO ──
