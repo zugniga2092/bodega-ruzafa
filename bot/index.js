@@ -348,7 +348,7 @@ async function enviarSolicitudesReview() {
         `Hola ${reserva.nombre || 'de nuevo'}.\n\n` +
         `Esperamos que disfrutaras de tu visita a Bodega Ruzafa.\n\n` +
         `Si tienes un momento, tu opinión en Google nos ayuda mucho a seguir mejorando:\n` +
-        `https://g.page/r/bodega-ruzafa/review\n\n` +
+        `https://www.google.com/maps/search/Bodega+Ruzafa+Calle+Cadiz+45+Valencia\n\n` +
         `Muchas gracias. Hasta pronto,\n` +
         `Bodega Ruzafa — 667 67 71 42`;
 
