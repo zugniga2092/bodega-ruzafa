@@ -340,6 +340,11 @@ bot.on('text', async (ctx) => {
         `Para cualquier cambio llámanos al 667 67 71 42.\n\n` +
         `Hasta pronto, Bodega Ruzafa.`;
       await ctx.reply(confirmMsg);
+
+      // Inyectar en el historial que la reserva ya está completada
+      // para que Claude no vuelva a generarla en mensajes posteriores
+      addToHistory(chatId, 'user', '[SISTEMA: La reserva ha sido registrada y confirmada al cliente. No vuelvas a mostrar los datos de la reserva ni la etiqueta [RESERVA:...]. La conversación puede continuar con normalidad.]');
+      addToHistory(chatId, 'assistant', 'Entendido. La reserva está completada y registrada.');
     } else {
       // Respuesta normal al usuario
       const replyClean = fullReply.replace(/\[RESERVA:[^\]]+\]/gi, '').trim();
