@@ -1,345 +1,360 @@
-# CLAUDE.md — Bodega Ruzafa | Proyecto Web Premium
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+---
+
+# Kamea Gastro Bar | Agente IA
 
 ## Contexto del Proyecto
 
-Construye una página web de una sola página (single-page) de nivel premium para **Bodega Ruzafa**, una bodega boutique ubicada en el icónico barrio de Ruzafa, Valencia (España). El objetivo es que esta web convenza al propietario de adquirirla inmediatamente por su calidad, sofisticación y valor percibido.
+Agente de IA conversacional para **Kamea Gastro Bar**, ubicado en C/ Olmos 7, San Antonio de Benagéber (Valencia). Proyecto independiente con su propia base de datos Supabase, su propio token de Telegram y sus propias variables de entorno.
 
-**Stack:** HTML5 + CSS3 + JavaScript vanilla. Todo en un único archivo `index.html` autocontenido.
+**El restaurante:** Gastro bar de cocina mediterránea contemporánea en un pueblo a 15 minutos de Valencia. Abre de lunes a sábado (almuerzos y comidas), con cenas solo viernes y sábado. Cerrado domingos. Ofrece menú del día de lunes a jueves a 12€. Admite perros, tiene terraza, tronas para bebés y acceso para silla de ruedas. Pago con tarjeta y Bizum. El dueño y contacto admin es **Alex**.
 
----
+**Propósito del agente:** Atiende clientes 24/7 por Telegram (migración a WhatsApp vía Twilio o 360dialog cuando esté listo), gestiona reservas, responde dudas sobre carta y alérgenos, aprende de cada conversación, y actúa como copiloto de Alex en modo admin.
 
-## Identidad de Marca
-
-- **Nombre:** Bodega Ruzafa
-- **Dueño:** Jairo
-- **Logo:** Las iniciales **BR** en tipografía serif clásica negra (ver `logo.png` en `/assets/`). Úsalo en el header y footer.
-- **Descripción real:** Venta de vinos, cavas, licores, aceites y productos gourmet. Catas de los mejores vinos todas las semanas. Eventos privados.
-- **Tagline:** *"Donde el vino encuentra su historia"*
-- **Tono:** Aspiracional, cálido, sofisticado. Urbano pero con raíces. Elegante sin ser frío.
-- **Idioma:** Todo el contenido en español de España.
+**Diferencia clave con un bot:** Mantiene memoria real de conversación, entiende lenguaje natural sin comandos rígidos, aprende preguntas nuevas, toma decisiones contextuales y mejora con cada interacción. No sigue un árbol de decisiones fijo — razona.
 
 ---
 
-## Paleta de Colores (Variables CSS obligatorias)
+## Comandos de Desarrollo
 
-```css
-:root {
-  --color-primary: #1A0A00;        /* Negro vino profundo */
-  --color-secondary: #6B1F1F;      /* Borgoña oscuro */
-  --color-accent: #C9A84C;         /* Dorado cálido */
-  --color-accent-light: #E8D5A3;   /* Dorado suave */
-  --color-cream: #FAF6EF;          /* Crema cálida (fondo claro) */
-  --color-white: #FFFFFF;
-  --color-text: #1A0A00;
-  --color-text-light: #6B5B4E;     /* Texto secundario */
-  --color-border: #DDD0C0;
-}
+Todo el código está en el subdirectorio `kamea-bot/`.
+
+```bash
+cd kamea-bot
+npm install          # instalar dependencias
+npm run dev          # desarrollo con hot-reload (node --watch)
+npm start            # producción
 ```
 
----
-
-## Tipografía (Google Fonts — cargar en `<head>`)
-
-```html
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-```
-
-- **Títulos H1, H2:** `Playfair Display` — Serif elegante, peso 700
-- **Subtítulos H3, citas:** `Cormorant Garamond` — Serif refinado, peso 300-400
-- **Cuerpo, nav, botones:** `Montserrat` — Sans-serif limpio, peso 300-500
+Requiere `.env` con las variables listadas abajo. Copiar de `.env.example` y rellenar.
 
 ---
 
-## Arquitectura del Sitio
+## Stack Tecnológico
 
-### Navegación fija (sticky nav)
-Logo BR a la izquierda. Links a la derecha: `Nosotros | Experiencias | Vinos | Galería | Reservas | Contacto`. Fondo transparente que se vuelve sólido (`--color-primary`) al hacer scroll. Hamburger menu en mobile.
-
----
-
-## Secciones Obligatorias (en orden)
-
-### 1. Hero Section
-- **Imagen de fondo:** Placeholder con `background: linear-gradient(135deg, #1A0A00 0%, #4A1515 50%, #6B1F1F 100%)` más una textura de ruido CSS sutil. Imagen ideal: interior de bodega con barricas de roble, iluminación cálida y dramática.
-- **Contenido centrado:**
-  - Logo BR grande (80px) en dorado
-  - H1: *"Una experiencia más allá del vino"*
-  - Subtítulo (Cormorant Garamond italic 22px): *"Catas privadas, eventos exclusivos y la mejor selección de vinos en la Plaza Barón de Cortés, Ruzafa"*
-  - CTA principal: Botón dorado `Reserva tu Experiencia` con hover elegante
-  - CTA secundario: Link texto `Descubre nuestra selección ↓`
-- **Efecto:** Parallax suave en el scroll. Partículas flotantes muy sutiles (pequeños puntos dorados, CSS animations).
-- **Altura:** 100vh
-
-### 2. Sobre Nosotros / Nuestra Historia
-- **Layout:** 2 columnas (60% texto / 40% imagen decorativa con marco dorado)
-- **Imagen placeholder:** Un sommelier sirviendo vino en ambiente íntimo, iluminación cálida.
-- **Texto narrativo:**
-  > *"Bodega Ruzafa nació de la pasión de Jairo por el vino: convertir cada copa en un momento memorable. En la Calle Cádiz, en el corazón del barrio más vibrante de Valencia, creamos un espacio donde la tradición vitivinícola española se encuentra con el espíritu moderno y artístico de Ruzafa.*
-  >
-  > *Seleccionamos personalmente cada botella de vino, cava, licor y producto gourmet. Cada semana organizamos catas para que descubras nuevos vinos en compañía. Y si buscas un espacio único para tu evento privado, aquí lo encontrarás. Porque para nosotros, el vino no es solo una bebida: es una conversación, un recuerdo, una historia que merece ser contada bien."*
-- **Stats destacados** (3 números animados con CountUp al entrar en viewport):
-  - `+350` Vinos de bodega
-  - `+1.200` Eventos realizados
-  - `15` Años en Ruzafa
-- **Separador decorativo:** Línea dorada con icono de hoja de vid centrado.
-
-### 3. Experiencias / Servicios
-- **Título:** *"Vive el Vino de Otra Manera"*
-- **Layout:** Grid 2x2 de cards con hover effect sofisticado (elevación + overlay de color borgoña semitransparente)
-- **4 Servicios:**
-
-  **Catas Semanales**
-  - Icono: copa de vino (SVG inline elegante)
-  - *"Cada semana organizamos catas guiadas para descubrir nuevos vinos, cavas y licores. Sesiones íntimas de 6 a 14 personas. Perfectas tanto para iniciarse como para profundizar. Incluye maridaje con productos gourmet de nuestra selección."*
-  - CTA: `Reservar Cata`
-
-  **Eventos Privados**
-  - Icono: brindis/copa doble
-  - *"Cumpleaños, aniversarios, despedidas, cenas de empresa o cualquier celebración que merezca un escenario único. Nos encargamos de todo: selección de vinos, decoración y atención personalizada durante todo el evento."*
-  - CTA: `Organizar Evento`
-
-  **Tienda Gourmet**
-  - Icono: botella/bolsa
-  - *"Más de 350 referencias de vinos, cavas, licores, aceites y productos gourmet seleccionados a mano por Jairo. Encuentra desde etiquetas cotidianas hasta joyas de bodega difíciles de encontrar en otro lugar de Valencia."*
-  - CTA: `Ver Selección`
-
-  **Regalos y Cestas**
-  - Icono: caja/lazo
-  - *"Cestas gourmet y selecciones de vino personalizadas para regalar en cualquier ocasión. Asesoramiento personalizado para encontrar el regalo perfecto para cada persona y cada presupuesto."*
-  - CTA: `Consultar Opciones`
-
-### 4. Selección de Vinos Destacados
-- **Título:** *"Nuestra Selección"*
-- **Subtítulo:** *"Cada botella, una historia elegida con precisión"*
-- **Layout:** Carrusel horizontal (scroll snap) de 5 wine cards con efecto 3D hover sutil
-- **5 Vinos ficticios pero realistas:**
-
-  1. **Ruzafa Reserva 2019** | Monastrell & Garnacha | D.O. Utiel-Requena
-     *"Profundo borgoña con aromas a fruta madura, tabaco y especias. Elegante en boca, con taninos sedosos y un final interminable."*
-     — Precio: 38€ | ⭐ Puntuación: 94 pts
-
-  2. **El Barrio Blanco 2022** | Verdejo & Viura | D.O. Rueda
-     *"Fresco y mineral con toques cítricos y florales. Ideal para mariscos y arroces valencianos."*
-     — Precio: 22€ | ⭐ Puntuación: 91 pts
-
-  3. **Carmen de Ruzafa 2018** | Tempranillo Crianza | D.O. Ribera del Duero
-     *"18 meses en barrica de roble francés. Complejidad máxima: cuero, vainilla y cereza negra en perfecta armonía."*
-     — Precio: 65€ | ⭐ Puntuación: 96 pts
-
-  4. **Calle Sueca Rosado 2023** | Bobal Rosado | D.O. Utiel-Requena
-     *"Vino fresco y veraniego de color salmón brillante. Fresa, melocotón y un punto floral irresistible."*
-     — Precio: 18€ | ⭐ Puntuación: 88 pts
-
-  5. **Gran Ruzafa Magnum 2016** | Blend | Vino de España
-     *"Nuestra joya. Blend secreto de cinco variedades. Crianza de 30 meses. Solo 600 botellas al año."*
-     — Precio: 120€ | ⭐ Puntuación: 97 pts
-
-- **Cada card incluye:** Placeholder imagen botella + descripción sensorial + precio + botón `Reservar para Cata`
-
-### 5. Galería Visual
-- **Título:** *"El Espacio"*
-- **Layout:** Masonry grid (CSS columns: 3 en desktop, 2 en tablet, 1 en mobile)
-- **9 imágenes placeholder** con gradientes y etiquetas descriptivas elegantes:
-  1. Interior bodega, barricas iluminadas
-  2. Evento corporativo, 30 personas brindando
-  3. Detalle copa de vino tinto con luz lateral
-  4. Sommelier explicando a grupo pequeño
-  5. Tabla de quesos y embutidos ibéricos
-  6. Vista exterior local, Ruzafa de noche
-  7. Cata privada, pareja, ambiente íntimo
-  8. Detalle etiqueta vino artesanal
-  9. Celebración cumpleaños con decoración dorada
-- **Hover effect:** Overlay oscuro con nombre de la imagen en Cormorant Garamond
-
-### 6. Testimonios
-- **Título:** *"Lo Que Dicen Nuestros Clientes"*
-- **Layout:** Slider/carrusel de 4 testimonios con navegación por puntos
-- **4 testimonios realistas:**
-
-  > *"Organizamos la cena anual de empresa aquí y fue absolutamente mágico. El sommelier explicó cada vino con una pasión contagiosa. Nuestros clientes todavía hablan de esa noche."*
-  — **Carlos M.**, Director Comercial, Valencia ⭐⭐⭐⭐⭐
-
-  > *"Para mi aniversario quería algo especial y Bodega Ruzafa superó todas mis expectativas. La atención personalizada, la selección de vinos, el ambiente... Perfecto en cada detalle."*
-  — **Lucía & Javier**, Valencia ⭐⭐⭐⭐⭐
-
-  > *"Soy sommelier profesional y exijo mucho. Esta bodega tiene una de las selecciones más cuidadas de la Comunidad Valenciana. Los Ribera del Duero y los vinos locales son una revelación."*
-  — **Andrés T.**, Sommelier Certificado ⭐⭐⭐⭐⭐
-
-  > *"La cata de iniciación fue perfecta para nosotros. Sin snobismo, con humor y mucho conocimiento. Salimos con una nueva pasión por el vino y con tres botellas bajo el brazo."*
-  — **Marta G.**, Google Reviews ⭐⭐⭐⭐⭐
-
-### 7. Sección de Reservas
-- **Título:** *"Reserva Tu Experiencia"*
-- **Subtítulo:** *"Cuéntanos qué tienes en mente. Nos encargamos del resto."*
-- **Layout:** 2 columnas — formulario elegante (izquierda) + información de contacto y horarios (derecha)
-- **Formulario con campos:**
-  - Nombre completo
-  - Email
-  - Teléfono
-  - Tipo de experiencia (select): Cata Privada / Evento Corporativo / Celebración Privada / Maridaje / Otro
-  - Número de personas
-  - Fecha preferida (date picker)
-  - Mensaje/detalles adicionales (textarea)
-  - Botón: `Enviar Solicitud` (dorado, fullwidth)
-- **Info lateral:**
-  - 📍 C/ Cádiz 45, Valencia (frente a la Iglesia de San Valero, Ruzafa)
-  - 📞 667 67 71 42
-  - ✉️ [EMAIL PENDIENTE — añadir cuando se confirme el dominio]
-  - **Horarios:** Lun-Sáb 10:00-14:30 y 17:00-20:30 | Domingos cerrado
-  - **Aviso:** Se recomienda confirmar horarios estacionales. Reservas mínimo 48h de antelación para catas privadas.
-
-### 8. Ubicación y Contacto
-- **Mapa placeholder:** `div` con gradiente oscuro simulando un mapa, con pin dorado centrado animado y texto "C/ Cádiz 45, Ruzafa, Valencia". Incluir enlace a Google Maps: `https://maps.google.com/?q=Calle+Cadiz+45,+Valencia`
-- **Datos de contacto repetidos** con iconos SVG inline elegantes
-
-### 9. Footer
-- Logo BR pequeño + tagline
-- 4 columnas: Navegación | Servicios | Legal | Redes Sociales
-- Newsletter: input email + botón `Suscribirme`
-- Copyright: `© 2025 Bodega Ruzafa. Todos los derechos reservados.`
-- `Aviso Legal | Política de Privacidad | Política de Cookies`
-- Iconos redes sociales (SVG): 
-  - Instagram: `https://www.instagram.com/bodegaruzafa/`
-  - Facebook: `https://www.facebook.com/bodegaruzafavalencia/`
-
----
-
-## Elementos de Diseño Premium Obligatorios
-
-### Animaciones y Micro-interacciones
-- **Scroll reveal:** Todos los elementos entran con `opacity: 0 → 1` + `translateY(30px → 0)` usando `IntersectionObserver`. Easing: `cubic-bezier(0.25, 0.46, 0.45, 0.94)`. Duración: 600-800ms.
-- **Hover en botones:** Scale(1.02) + sombra dorada `box-shadow: 0 8px 30px rgba(201, 168, 76, 0.4)`. Transición 300ms.
-- **Hover en nav links:** Subrayado que se expande desde el centro (CSS pseudo-element).
-- **CountUp animation:** Los stats de "Sobre Nosotros" se cuentan desde 0 cuando entran en viewport.
-- **Cursor personalizado:** Círculo pequeño (12px) dorado semitransparente que sigue el cursor. Al hover sobre links, se expande a 40px.
-- **Loading screen:** Pantalla inicial (1.5s) con logo BR que aparece y se desvanece. Fondo oscuro.
-
-### Texturas y Fondos
-- **Hero:** Gradient oscuro borgoña + ruido CSS (`filter: url(#noise)` SVG o `background-image` con pseudo-element)
-- **Sección vinos:** Fondo `--color-primary` con textura sutil de madera (CSS repeating-linear-gradient simulando vetas)
-- **Galería:** Fondo `--color-cream`
-- **Testimonios:** Fondo oscuro con pattern de rombos muy sutil
-
-### Separadores Decorativos
-Entre secciones, usar: `<div class="divider">` con línea dorada fina (1px) y ornamento central (flor de vid SVG inline o símbolo ❧).
-
-### Línea Decorativa en Headings
-Los `H2` de cada sección llevan una línea dorada de 60px debajo, centrada, con 8px de margen.
-
----
-
-## Responsive Breakpoints
-
-```css
-/* Mobile: < 768px */
-/* Tablet: 768px - 1024px */  
-/* Desktop: > 1024px */
-/* Wide: > 1440px — max-width: 1400px centrado */
-```
-
-- Nav: hamburger en mobile (menú fullscreen oscuro)
-- Grid 2x2 de servicios → stack vertical en mobile
-- Carrusel de vinos → scroll horizontal en mobile
-- Formulario de reservas → una columna en mobile
-
----
-
-## Código JavaScript Requerido
-
-```javascript
-// 1. Sticky nav con cambio de fondo al scroll
-// 2. Smooth scroll para anchor links
-// 3. IntersectionObserver para scroll reveal animations
-// 4. CountUp para estadísticas
-// 5. Hamburger menu toggle
-// 6. Cursor personalizado
-// 7. Loading screen con timeout
-// 8. Carrusel de testimonios (autoplay cada 5s + navegación manual)
-// 9. Wine cards carousel (scroll snap + botones prev/next)
-// 10. Form validation básica con feedback visual
-```
+- **Runtime:** Node.js ≥18
+- **Framework de mensajería:** Telegraf (Telegram) → migrar a Twilio o 360dialog para WhatsApp
+- **Inteligencia:** Anthropic Claude API — modelos usados:
+  - `claude-sonnet-4-6` — conversaciones con clientes (`agent.js`)
+  - `claude-haiku-4-5` — extracción de menú y posts de Instagram (`admin.js`)
+- **Memoria:** Supabase — historial persistente por chat_id, últimos 10 mensajes
+- **Base de datos:** Supabase (instancia propia de Kamea — no compartida con ningún otro cliente)
+- **Automatizaciones programadas:** n8n via endpoint REST /agent
+- **Hosting:** Railway.app
+- **Versionado:** GitHub (repositorio privado kamea-bot)
 
 ---
 
 ## Estructura de Archivos
-
 ```
-/
-├── index.html          ← TODO el HTML, CSS y JS en un único archivo autocontenido
-└── assets/
-    └── logo.png        ← Logo BR (ya disponible)
-```
-
-**Importante:** Todo el CSS va en `<style>` en el `<head>` y todo el JS al final del `<body>`. El archivo debe funcionar abriendo directamente en el navegador sin servidor.
-
----
-
-## Placeholders de Imágenes
-
-Como no hay fotografías reales, implementa los placeholders así:
-
-```css
-.img-placeholder-hero {
-  background: linear-gradient(135deg, #1A0A00 0%, #3D1010 40%, #6B2020 100%);
-  /* Descripción: "Interior de bodega, barricas de roble, luz cálida y dramática" */
-}
-
-.img-placeholder-person {
-  background: linear-gradient(160deg, #2D1810 0%, #4A2820 100%);
-  /* Añadir texto descriptor con font Cormorant en dorado */
-}
-```
-
-Cada placeholder debe tener en su centro un texto descriptivo en Cormorant Garamond italic 14px color `rgba(201, 168, 76, 0.5)` indicando qué foto iría ahí.
-
----
-
-## Copy Adicional para SEO (meta tags)
-
-```html
-<title>Bodega Ruzafa | Vinos, Catas y Eventos Privados en Valencia</title>
-<meta name="description" content="Bodega boutique en Ruzafa, Valencia. Vinos, cavas, licores y productos gourmet. Catas semanales y eventos privados. C/ Cádiz 45. Tel: 667 67 71 42.">
-<meta name="keywords" content="Bodega Ruzafa, vinos Ruzafa Valencia, catas de vino Valencia, eventos privados Valencia, tienda vinos Valencia, calle Cadiz Valencia, productos gourmet Valencia">
-<meta property="og:title" content="Bodega Ruzafa | Vinos, Cavas y Experiencias en Valencia">
-<meta property="og:description" content="Tu bodega de referencia en Ruzafa. Vinos, cavas, licores, gourmet, catas semanales y eventos privados. C/ Cádiz 45, Valencia.">
+kamea-bot/
+├── CLAUDE.md                  ← Este archivo — leer siempre antes de tocar el código
+├── index.js                   ← Entrada principal, inicializa agente y servidor Express
+├── agent.js                   ← Núcleo del agente — llamada a Claude API con memoria y system prompt
+├── messenger.js               ← Capa de mensajería (Telegraf ahora, Twilio después)
+├── memory.js                  ← Gestión de memoria conversacional en Supabase
+├── commands/
+│   ├── cliente.js             ← Lógica modo cliente
+│   └── admin.js               ← Lógica modo admin y todos los comandos #admin
+├── workflows/
+│   └── n8n-endpoints.js       ← Endpoints REST para automatizaciones de n8n
+├── package.json
+├── .env                       ← Variables de entorno reales (nunca subir a GitHub)
+└── .env.example               ← Plantilla de variables sin valores reales
 ```
 
 ---
 
-## Restricciones Absolutas
+## Variables de Entorno
+```env
+ANTHROPIC_API_KEY=           # API key de Anthropic — cerebro del agente
+TELEGRAM_BOT_TOKEN=          # Token del agente de Kamea creado con @BotFather
+TELEGRAM_ADMIN_CHAT_ID=      # Chat ID de Alex para pruebas y notificaciones
+SUPABASE_URL=                # URL del proyecto Supabase de Kamea
+SUPABASE_ANON_KEY=           # Anon key del proyecto Supabase de Kamea
+BUSINESS_ID=kamea            # Identificador del cliente — cambia por cliente
+PORT=3000
+```
 
-❌ **NO usar:**
-- Bootstrap, Tailwind ni ningún framework CSS externo
-- jQuery ni librerías JS externas (solo vanilla JS)
-- Diseños genéricos o plantillas visualmente reconocibles
-- Colores brillantes, neones o combinaciones juveniles
-- Navegación confusa o elementos sin propósito
-- Código sin comentarios en secciones clave
-
-✅ **SIEMPRE:**
-- Variables CSS para todos los colores y tipografías
-- Comentarios en CSS separando cada sección: `/* ====== HERO SECTION ====== */`
-- Semántica HTML correcta: `<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<footer>`
-- `aria-label` en botones icónicos y navegación
-- Coherencia visual total entre secciones
-- Mobile-first approach en el CSS
+**IMPORTANTE:** Nunca subir .env a GitHub. Está en .gitignore. Las variables se configuran directamente en Railway dashboard.
 
 ---
 
-## Criterio de Calidad Final
+## Base de Datos Supabase
 
-Antes de considerar el trabajo terminado, verifica:
+Todas las tablas incluyen business_id para arquitectura multi-cliente.
 
-1. ¿El diseño comunica **lujo accesible** en los primeros 3 segundos?
-2. ¿Todos los CTAs son visibles y persuasivos?
-3. ¿El móvil se ve tan bien como el desktop?
-4. ¿Las animaciones son suaves y no molestas?
-5. ¿Hay coherencia tipográfica total?
-6. ¿El código está limpio y comentado?
-7. ¿Los textos venden la experiencia, no solo describen?
+### conversaciones
+Memoria del agente. Se recuperan los últimos 10 mensajes de cada chat_id antes de cada respuesta. Sin esto el agente no recuerda el contexto de la conversación.
+```sql
+id uuid primary key default gen_random_uuid()
+business_id text not null
+chat_id text not null
+role text not null -- 'user' o 'assistant'
+content text not null
+created_at timestamptz default now()
+```
 
-Si la respuesta a alguna pregunta es "no", revisa antes de entregar.
+### reservas
+```sql
+id uuid primary key default gen_random_uuid()
+business_id text not null
+chat_id text not null
+nombre text not null
+telefono text
+fecha_visita date not null
+hora text not null
+personas integer not null
+servicio text not null -- 'almuerzo', 'comida', 'cena'
+estado text default 'pendiente' -- 'pendiente', 'confirmada', 'rechazada', 'completada', 'no_show'
+notas text -- alergias, niños, carrito, celebración especial
+created_at timestamptz default now()
+```
+
+### clientes
+```sql
+id uuid primary key default gen_random_uuid()
+business_id text not null
+chat_id text not null unique
+nombre text
+telefono text
+primera_visita date
+ultima_visita date
+visitas_total integer default 0
+activo boolean default true
+created_at timestamptz default now()
+```
+
+### preguntas_desconocidas
+Aprendizaje activo del agente. Cuando no sabe responder algo lo guarda aquí, avisa al dueño, y cuando el dueño responde queda en la base de conocimiento para siempre.
+```sql
+id uuid primary key default gen_random_uuid()
+business_id text not null
+chat_id text not null
+pregunta text not null
+respuesta text -- se rellena cuando el dueño responde via #admin respuesta [id]
+estado text default 'pendiente' -- 'pendiente', 'respondida'
+created_at timestamptz default now()
+```
+
+### menu_dia
+El dueño actualiza esto cada día via #admin en lenguaje natural. El agente lo consulta en tiempo real.
+```sql
+id uuid primary key default gen_random_uuid()
+business_id text not null
+fecha date not null
+entrante text
+plato_principal text
+postre text
+precio numeric default 12
+activo boolean default true
+created_at timestamptz default now()
+```
+
+### notificaciones
+Log de mensajes automáticos enviados por n8n.
+```sql
+id uuid primary key default gen_random_uuid()
+business_id text not null
+tipo text not null -- 'recordatorio_24h', 'recordatorio_2h', 'resena', 'reactivacion', 'reporte_semanal'
+contenido text
+destinatario text
+enviado boolean default false
+created_at timestamptz default now()
+```
 
 ---
 
-*Este archivo fue creado como brief de proyecto. El objetivo es que el propietario de Bodega Ruzafa vea esta web y piense: "Esto es exactamente lo que necesito para llevar mi negocio al siguiente nivel."*
+## Arquitectura Clave
+
+### Patrón de etiquetas (tags)
+`agent.js` devuelve texto plano a `cliente.js`, que lo parsea buscando etiquetas especiales:
+
+- `[RESERVA: nombre=X, fecha=DD/MM/YYYY, hora=HH:MM, personas=X, servicio=X, telefono=X, notas=X]` → guarda en Supabase + notifica al admin
+- `[PREGUNTA_DESCONOCIDA: texto]` → guarda en `preguntas_desconocidas` + notifica al admin
+
+Cuando Claude incluye una etiqueta, el sistema la intercepta y la etiqueta nunca llega al cliente. Este contrato entre el system prompt y `cliente.js` es central — si se cambia el formato de la etiqueta en uno hay que cambiarlo en el otro.
+
+### Sesiones admin en memoria
+Las sesiones admin activas se guardan en un `Map` en memoria (`admin.js:8`). Se pierden al reiniciar el servidor. El admin tendrá que usar `#admin` de nuevo para reactivar la sesión.
+
+### Routing de comandos admin
+La mayoría de comandos `#admin` usan **regex matching directo** en `admin.js`, sin pasar por Claude. Solo dos llaman a la API:
+- `#admin menú hoy [descripción]` → Haiku extrae el JSON de platos
+- `#admin post [tema]` → Haiku genera los posts de Instagram
+
+---
+
+## Lógica de Detección de Modo
+```
+Mensaje entrante
+    ↓
+¿Contiene #admin?
+    ├── SÍ → Activar modo admin para este chat_id
+    │         Persiste 30 minutos de inactividad
+    │         O hasta que el dueño escriba "salir"
+    └── NO → ¿Está en sesión admin activa?
+                ├── SÍ → Continuar en modo admin
+                └── NO → Modo cliente (por defecto)
+```
+
+---
+
+## Modo Cliente — Comportamiento del Agente
+
+- Responde en el idioma del cliente — español, inglés, valenciano u otro
+- Nunca revela que es IA
+- Consulta Supabase antes de responder: menú del día, platos agotados, notas del día, base de conocimiento
+- Alérgenos: NUNCA en números, siempre en texto legible — "Este plato contiene gluten, huevos y lácteos"
+- Si el cliente menciona una alergia el agente revisa todos los platos relevantes y advierte claramente
+- Flujo de reserva conversacional y natural — recoge datos en orden sin parecer un formulario
+- Al completar reserva: guarda en Supabase estado pendiente, notifica al dueño con todos los detalles, responde al cliente que está pendiente de confirmación
+- Preguntas sin respuesta: guarda en preguntas_desconocidas, notifica al dueño, responde que va a consultarlo
+- Si hay urgencia sugiere llamar al 960 81 18 48
+
+---
+
+## Modo Admin — Copiloto del Dueño
+
+El agente actúa como copiloto inteligente. El dueño habla en lenguaje natural con #admin — no necesita recordar comandos exactos.
+
+### Menú
+| Comando | Acción |
+|---|---|
+| #admin menú hoy [descripción natural] | El agente extrae entrante/principal/postre y actualiza Supabase |
+| #admin agotado [plato] | Marca plato como no disponible |
+| #admin oferta [descripción] | Guarda oferta especial del día |
+| #admin nota [texto] | Guarda nota del día visible para el agente |
+
+### Reservas
+| Comando | Acción |
+|---|---|
+| #admin reservas hoy | Lista reservas del día con estado |
+| #admin reservas mañana | Lista reservas del día siguiente |
+| #admin confirmar [nombre o id] | Confirma reserva y notifica automáticamente al cliente |
+| #admin rechazar [nombre o id] [motivo] | Rechaza y notifica al cliente con disculpa |
+| #admin no-show [nombre o id] | Marca como no_show en Supabase |
+
+### Conocimiento
+| Comando | Acción |
+|---|---|
+| #admin preguntas | Lista preguntas de clientes sin responder |
+| #admin respuesta [id] [respuesta] | Guarda en base de conocimiento y notifica al cliente si sigue activo |
+| #admin resumen | Resumen completo del día |
+| #admin cierre de hoy | Igual que resumen |
+
+### Contenido
+| Comando | Acción |
+|---|---|
+| #admin post hoy | 3 ideas de post Instagram con el menú del día, emojis y hashtags de Valencia |
+| #admin post [tema] | Post sobre el tema indicado |
+
+---
+
+## Endpoint REST para n8n
+```
+POST /agent
+Body: { businessId, action, data }
+```
+
+### Acciones disponibles
+| Acción | Descripción |
+|---|---|
+| recordatorio_24h | Envía recordatorio a clientes con reserva mañana |
+| recordatorio_2h | Envía recordatorio 2h antes de cada reserva |
+| aviso_menu | Avisa al dueño si el menú no está actualizado a las 12:30 |
+| solicitar_resena | Solicita reseña Google el día después de la visita |
+| reactivar_clientes | Mensaje personalizado a clientes inactivos más de 30 días |
+| reporte_semanal | Resumen semanal al dueño cada lunes a las 9:00 |
+
+---
+
+## Automatizaciones n8n
+
+| Automatización | Trigger | Acción |
+|---|---|---|
+| Recordatorio 24h | Cada día 11:00 | Busca reservas confirmadas para mañana, mensaje personalizado |
+| Recordatorio 2h | 2h antes de cada reserva | Mensaje final anti no-show |
+| Aviso menú vacío | Cada día 12:30 | Si menu_dia hoy está vacío avisa al dueño |
+| Solicitud reseña | Día siguiente a reserva completada | Mensaje con link Google Maps |
+| Reactivación | Cada lunes | Clientes con ultima_visita hace más de 30 días |
+| Reporte semanal | Lunes 9:00 | Resumen de la semana al dueño |
+
+---
+
+## Información del Restaurante
+```
+Nombre: Kamea Gastro Bar
+Dirección: C/ Olmos 7, San Antonio de Benagéber, Valencia
+Teléfono: 960 81 18 48
+Instagram: @kameagastro
+Google Maps: https://maps.app.goo.gl/WAnsjwWDfNgfmoAy9
+
+Horarios:
+- Almuerzos: Lunes-Sábado 9:00-12:00
+- Comidas: Lunes-Sábado 13:00-16:00 (cocina cierra 15:30)
+- Cenas: Viernes-Sábado 20:00-00:00 (cocina cierra 23:30)
+- Domingos: Cerrado
+- Menú del día: Lunes-Jueves en comidas, 12€ incluye entrante, plato principal, postre y bebida
+
+Instalaciones:
+- Terraza: Sí
+- Admiten perros: Sí
+- Trona bebés: Sí
+- Acceso silla de ruedas: Sí
+- Aparcamiento: No propio, buscar en el pueblo
+- Wifi: Sí
+- Zona privada: No, pero hacemos eventos privados
+- Tarjeta: Sí — Bizum: Sí
+```
+
+---
+
+## Deploy en Railway
+
+1. Conectar repositorio GitHub kamea-bot a Railway
+2. Railway detecta Node.js automáticamente
+3. Configurar todas las variables de entorno en Railway dashboard
+4. Cada push a main despliega automáticamente sin intervención manual
+5. La URL del servicio es el webhook de Telegram y el endpoint de n8n
+
+---
+
+## Cómo Clonar para un Nuevo Cliente
+
+1. Clonar este repositorio con nuevo nombre
+2. Cambiar BUSINESS_ID en .env
+3. Actualizar system prompt en agent.js con información del nuevo cliente
+4. Crear nuevo agente en Telegram con @BotFather
+5. Crear nuevo proyecto en Supabase y ejecutar el SQL de las tablas
+6. Crear nuevo repositorio privado en GitHub
+7. Crear nuevo servicio en Railway conectado al nuevo repositorio
+8. Configurar variables de entorno del nuevo cliente en Railway
+
+El código no cambia — solo cambian las variables de entorno y el system prompt.
+
+---
+
+## Migración a WhatsApp
+
+Cuando esté listo para migrar de Telegram a WhatsApp:
+1. Contratar número en 360dialog (más barato para agencias) o Twilio
+2. Cambiar módulo Telegraf por cliente WhatsApp en messenger.js
+3. El resto del sistema no cambia — agent.js, memory.js, commands/ se mantienen intactos
+4. Actualizar variables de entorno en Railway
+
+---
+
+## Estado del Proyecto
+
+- [ ] Agente Telegram funcionando en local
+- [ ] Conexión Supabase verificada
+- [ ] Modo cliente probado con conversación real
+- [ ] Modo admin probado con todos los comandos
+- [ ] Deploy en Railway
+- [ ] Pruebas end-to-end con Alex como admin
+- [ ] Migración a WhatsApp (pendiente SIM de Alex)
+- [ ] Automatizaciones n8n configuradas
