@@ -8,8 +8,8 @@
   <meta name="keywords" content="Kamea Gastro Bar, restaurante San Antonio Benagéber, menú del día Valencia, cenas Valencia, gastro bar Valencia, eventos privados Valencia, terraza Valencia">
   <meta property="og:title" content="Kamea Gastro Bar | San Antonio de Benagéber, Valencia">
   <meta property="og:description" content="Cocina de mercado, producto local y ambiente único. Menú del día, almuerzos y cenas especiales en la C/ Olmos 7.">
-  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
-  <link rel="apple-touch-icon" href="assets/logo.svg">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="apple-touch-icon" href="assets/logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <style>
@@ -260,7 +260,7 @@
     }
     .hero-bg-img {
       position: absolute; inset: -10%;
-      background-image: url('https://picsum.photos/seed/kamea-hero/1920/1080');
+      background-image: url('assets/foto-hero.jpeg');
       background-size: cover;
       background-position: center;
       will-change: transform;
@@ -652,17 +652,18 @@
       background: var(--color-cream);
     }
     .galeria-grid {
-      columns: 3;
-      column-gap: 1rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
       margin-top: 4rem;
     }
     .galeria-item {
-      break-inside: avoid;
-      margin-bottom: 1rem;
       position: relative; overflow: hidden;
+      aspect-ratio: 1 / 1;
     }
     .galeria-item img {
-      width: 100%; display: block;
+      width: 100%; height: 100%; display: block;
+      object-fit: cover;
       transition: transform 0.5s ease;
     }
     .galeria-overlay {
@@ -816,7 +817,7 @@
     .reservas-cta-nota {
       font-family: var(--font-sub);
       font-style: italic;
-      font-size: 0.82rem; color: var(--color-text-light);
+      font-size: 1rem; color: var(--color-text-light);
       line-height: 1.6; padding: 0 0.2rem;
     }
 
@@ -1029,7 +1030,7 @@
       .nav-links, .nav-logo-name { display: none; }
       .hamburger { display: flex; }
       .servicios-grid  { grid-template-columns: 1fr; }
-      .galeria-grid    { columns: 2; }
+      .galeria-grid    { grid-template-columns: repeat(2, 1fr); }
       .reservas-grid   { grid-template-columns: 1fr; }
       .contacto-grid   { grid-template-columns: 1fr; }
       .footer-top      { grid-template-columns: 1fr; }
@@ -1039,7 +1040,7 @@
     }
 
     @media (max-width: 480px) {
-      .galeria-grid { columns: 1; }
+      .galeria-grid { grid-template-columns: repeat(2, 1fr); }
       .section-container { padding: 0 1.2rem; }
     }
 
@@ -1057,7 +1058,7 @@
   <!-- ====== LOADING SCREEN ====== -->
   <div id="loading-screen" aria-hidden="true">
     <div class="loading-logo">
-      <img src="assets/logo.svg" alt="Kamea" class="loading-logo-img">
+      <img src="assets/logo.png" alt="Kamea" class="loading-logo-img">
       <span class="loading-tagline">Cocina con alma</span>
     </div>
   </div>
@@ -1066,7 +1067,7 @@
   <header>
     <nav id="navbar" aria-label="Navegación principal">
       <a href="#hero" class="nav-logo" aria-label="Kamea Gastro Bar — inicio">
-        <img src="assets/logo.svg" alt="Kamea" class="nav-logo-img">
+        <img src="assets/logo.png" alt="Kamea" class="nav-logo-img">
         <span class="nav-logo-name">Kamea</span>
       </a>
       <ul class="nav-links" role="list">
@@ -1102,7 +1103,7 @@
 
       <div class="hero-content">
         <div class="hero-logo-wrap reveal">
-          <img src="assets/logo.svg" alt="Kamea Gastro Bar" class="hero-logo-img">
+          <img src="assets/logo.png" alt="Kamea Gastro Bar" class="hero-logo-img">
         </div>
         <p class="hero-eyebrow reveal reveal-delay-1">San Antonio de Benagéber · Valencia</p>
         <h1 class="hero-title reveal reveal-delay-2">
@@ -1155,7 +1156,7 @@
           </div>
           <div class="nosotros-img-wrap reveal reveal-delay-2">
             <div class="nosotros-img-frame">
-              <img src="https://picsum.photos/seed/kamea-nosotros/600/800" alt="El equipo de Kamea Gastro Bar" class="nosotros-img" loading="lazy">
+              <img src="assets/foto-nosotros.jpeg" alt="El equipo de Kamea Gastro Bar" class="nosotros-img" loading="lazy">
             </div>
           </div>
         </div>
@@ -1279,39 +1280,39 @@
         <div class="galeria-grid" role="list">
 
           <figure class="galeria-item reveal" role="listitem">
-            <img src="https://picsum.photos/seed/kamea-g1/800/600" alt="Interior de Kamea Gastro Bar" loading="lazy">
+            <img src="assets/galeria-1.jpeg" alt="Interior de Kamea Gastro Bar" loading="lazy">
             <div class="galeria-overlay"><span>Interior del restaurante</span></div>
           </figure>
           <figure class="galeria-item reveal reveal-delay-1" role="listitem">
-            <img src="https://picsum.photos/seed/kamea-g2/800/900" alt="Evento en Kamea" loading="lazy">
+            <img src="assets/galeria-2.jpeg" alt="Evento en Kamea" loading="lazy">
             <div class="galeria-overlay"><span>Eventos y celebraciones</span></div>
           </figure>
           <figure class="galeria-item reveal reveal-delay-2" role="listitem">
-            <img src="https://picsum.photos/seed/kamea-g3/800/550" alt="Plato de temporada en Kamea" loading="lazy">
+            <img src="assets/galeria-3.jpeg" alt="Plato de temporada en Kamea" loading="lazy">
             <div class="galeria-overlay"><span>Cocina de temporada</span></div>
           </figure>
           <figure class="galeria-item reveal" role="listitem">
-            <img src="https://picsum.photos/seed/kamea-g4/800/700" alt="Comida en Kamea" loading="lazy">
+            <img src="assets/galeria-4.jpeg" alt="Comida en Kamea" loading="lazy">
             <div class="galeria-overlay"><span>Producto de mercado</span></div>
           </figure>
           <figure class="galeria-item reveal reveal-delay-1" role="listitem">
-            <img src="https://picsum.photos/seed/kamea-g5/800/600" alt="Tabla gourmet en Kamea" loading="lazy">
+            <img src="assets/galeria-5.jpeg" alt="Tabla gourmet en Kamea" loading="lazy">
             <div class="galeria-overlay"><span>Selección gourmet</span></div>
           </figure>
           <figure class="galeria-item reveal reveal-delay-2" role="listitem">
-            <img src="https://picsum.photos/seed/kamea-g6/800/800" alt="Terraza de Kamea" loading="lazy">
+            <img src="assets/galeria-6.jpeg" alt="Terraza de Kamea" loading="lazy">
             <div class="galeria-overlay"><span>Terraza exterior</span></div>
           </figure>
           <figure class="galeria-item reveal" role="listitem">
-            <img src="https://picsum.photos/seed/kamea-g7/800/650" alt="Cena privada en Kamea" loading="lazy">
+            <img src="assets/galeria-7.jpeg" alt="Cena privada en Kamea" loading="lazy">
             <div class="galeria-overlay"><span>Cenas especiales</span></div>
           </figure>
           <figure class="galeria-item reveal reveal-delay-1" role="listitem">
-            <img src="https://picsum.photos/seed/kamea-g8/800/550" alt="Detalle culinario en Kamea" loading="lazy">
+            <img src="assets/galeria-8.jpeg" alt="Detalle culinario en Kamea" loading="lazy">
             <div class="galeria-overlay"><span>Detalle y precisión</span></div>
           </figure>
           <figure class="galeria-item reveal reveal-delay-2" role="listitem">
-            <img src="https://picsum.photos/seed/kamea-g9/800/700" alt="Ambiente de Kamea Gastro Bar" loading="lazy">
+            <img src="assets/galeria-9.jpeg" alt="Ambiente de Kamea Gastro Bar" loading="lazy">
             <div class="galeria-overlay"><span>Ambiente y carácter</span></div>
           </figure>
 
@@ -1428,7 +1429,7 @@
               <h3 class="info-block-title">Instalaciones</h3>
               <p class="info-horarios">
                 Terraza exterior<br>
-                WiFi gratuito &nbsp;·&nbsp; Tarjeta y Bizum
+                WiFi gratuito
               </p>
             </div>
 
@@ -1568,7 +1569,7 @@
 
         <div class="footer-brand">
           <div class="footer-logo-wrap">
-            <img src="assets/logo.svg" alt="Kamea" class="footer-logo-img">
+            <img src="assets/logo.png" alt="Kamea" class="footer-logo-img">
             <span class="footer-logo-name">Kamea Gastro Bar</span>
           </div>
           <p class="footer-tagline">Cocina con alma en el corazón<br>de San Antonio de Benagéber.</p>
@@ -1622,7 +1623,7 @@
       </div>
 
       <div class="footer-bottom">
-        <p class="footer-copy">© 2025 Kamea Gastro Bar. Todos los derechos reservados.</p>
+        <p class="footer-copy">© 2026 Kamea Gastro Bar. Todos los derechos reservados.</p>
         <nav class="footer-legal" aria-label="Legal">
           <a href="aviso-legal.html">Aviso Legal</a>
           <a href="politica-privacidad.html">Privacidad</a>
